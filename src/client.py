@@ -16,8 +16,8 @@ class HockeyClient(LineReceiver, object):
         self.debug = debug
 
         # state
-        self.grid = np.zeros(shape=(11, 11))
-        self.edge_taken = np.zeros(shape=(11, 11, 11, 11))
+        self.grid = np.zeros((11, 11))
+        self.edge_taken = np.zeros((11, 11, 11, 11))
         self.ball_position = None
         self.goal = None
 
