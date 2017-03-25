@@ -184,6 +184,39 @@ class RandomHockeyClient(HockeyClient):
     def play_game(self):
         self.update_blacklist()
 
+        # Use the powerup if near the goal
+        if self.powerup and self.ball_position[0] == 2 and self.goal == 'north':
+            # if self.ball_position[1] == 4:
+                # return 'power north east'
+            if self.ball_position[1] == 5:
+                return 'power north east'
+            if self.ball_position[1] == 6:
+                return 'power north'
+            if self.ball_position[1] == 7:
+                return 'power north'
+            if self.ball_position[1] == 8:
+                return 'power north'
+            if self.ball_position[1] == 9:
+                return 'power north west'
+            # if self.ball_position[1] == 10:
+                # return 'power '
+
+        if self.powerup and self.ball_position[0] == 13 and self.goal == 'south':
+            # if self.ball_position[1] == 4:
+                # return 'power south east'
+            if self.ball_position[1] == 5:
+                return 'power south east'
+            if self.ball_position[1] == 6:
+                return 'power south'
+            if self.ball_position[1] == 7:
+                return 'power south'
+            if self.ball_position[1] == 8:
+                return 'power south'
+            if self.ball_position[1] == 9:
+                return 'power south west'
+            # if self.ball_position[1] == 10:
+                # return 'power south west'
+
         if self.ball_position[0] == 0 and self.goal == 'north':
             if self.ball_position[1] == 6:
                 return 'north east'
