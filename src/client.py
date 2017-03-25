@@ -20,6 +20,7 @@ class HockeyClient(LineReceiver, object):
         self.edge_taken = np.zeros((11, 11, 11, 11))
         self.ball_position = None
         self.goal = None
+        self.blacklist = [(0, 0), (0, 10), (10, 0), (10, 10)]
 
         # borders
         for i in range(10):
@@ -52,6 +53,12 @@ class HockeyClient(LineReceiver, object):
         match = re.match(r'your goal is (\w+) - \d+', line)
         if match:
             self.goal = match.group(1)
+            if self.goal == 'north':
+                self.blacklist += [(0, 5), (1, 5), (1, 3), (1, 4), (1, 6), (1, 7)]
+            else:
+                self.blacklist += [(10, 5), (9, 5), (9, 3), (9, 4), (9, 6), (9, 7)]
+
+            #print(self.blacklist)
             return
 
         match = re.match(r'.* did go (.*) - \d+', line)
@@ -71,7 +78,7 @@ class HockeyClient(LineReceiver, object):
             self.sendLine(self.play_game())
 
     def neighborhood(self, position):
-        for edge, delta in Action.move.iteritems():
+        for edge, delta in Action.move.items():
             dx, dy = delta
             pos = position[0] + dy, position[1] + dx
             if 0 <= pos[0] <= 10 and 0 <= pos[1] <= 10:
@@ -79,7 +86,7 @@ class HockeyClient(LineReceiver, object):
 
     def valid_neighborhood(self, position):
         for neighbor in self.neighborhood(position):
-            if not self.edge_taken[position][neighbor[1]]:
+            if not (self.edge_taken[position][neighbor[1]] and neighbor[1] in self.blacklist):
                 yield neighbor
 
 class RandomHockeyClient(HockeyClient):
