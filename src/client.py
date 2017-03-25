@@ -59,11 +59,12 @@ class HockeyClient(LineReceiver, object):
 
         match = re.match(r'your goal is (\w+) - \d+', line)
         if match:
-            self.goal = match.group(1)
-            if self.goal == 'north':
-                self.goal_position = (-1, 7)
+            if match.group(1) == 'north':
+                self.goal = 'south'
+                self.goal_position = (15, 7) # go south
             else:
-                self.goal_position = (15, 7)
+                self.goal = 'north'
+                self.goal_position = (-1, 7) # go north
             self.init_blacklist()
             return
 
@@ -123,19 +124,20 @@ class RandomHockeyClient(HockeyClient):
         self.blacklist[14, 14] = True
 
         if self.goal == 'north':
-            self.blacklist[0, 7] = True
-            self.blacklist[1, 5] = True
-            self.blacklist[1, 6] = True
-            self.blacklist[1, 7] = True
-            self.blacklist[1, 8] = True
-            self.blacklist[1, 9] = True
-        else:
+            # protect south goal
             self.blacklist[14, 7] = True
             self.blacklist[13, 5] = True
             self.blacklist[13, 6] = True
             self.blacklist[13, 7] = True
             self.blacklist[13, 8] = True
             self.blacklist[13, 9] = True
+        else:
+            self.blacklist[0, 7] = True
+            self.blacklist[1, 5] = True
+            self.blacklist[1, 6] = True
+            self.blacklist[1, 7] = True
+            self.blacklist[1, 8] = True
+            self.blacklist[1, 9] = True
 
     def update_blacklist(self):
         for y in range(1, 14):
