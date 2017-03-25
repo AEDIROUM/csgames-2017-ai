@@ -49,6 +49,7 @@ class HockeyClient(LineReceiver, object):
         if self.debug:
             print('Server said:', line)
             print(self.grid)
+            print(self.blacklist)
 
         match = re.match(r'ball is at \((\d+), (\d+)\) - \d+', line)
         if match:
@@ -109,25 +110,25 @@ class HockeyClient(LineReceiver, object):
                 yield neighbor
 
     def update_blacklist(self):
-        temp = []
-        blacklist = zip(*np.nonzero(self.blacklist))
+        temp = set()
 
-        for pos in blacklist:
-            for accessible in [u for u in self.valid_neighborhood(pos) if not self.blacklist[u[1]]]:
-                temp += spooke(accessible, pos, blacklist)
+        for pos in zip(*np.nonzero(self.blacklist)):
+            for accessible in [u[1] for u in self.valid_neighborhood(pos) if not self.blacklist[u[1]]]:
+                temp = temp.union(self.spooke(accessible, pos))
                 # print(accessible)
 
-        self.blacklist += temp
+        for new_blacklist_position in temp:
+            self.blacklist[new_blacklist_position] = True
 
-    def spooke(self, u, v, blklist):
-        a = [w for w in self.valid_neighborhood(u) if not v or not in blklist]
+    def spooke(self, u, v):
+        a = [w for edge_w, w in self.valid_neighborhood(u) if v != w and not self.blacklist[w]]
 
         if len(a) == 0:
-            return u
+            return set(u)
         elif len(a) == 1:
-            return [u, spooke(a[0], u, blklist)]
+            return set(u).union(self.spooke(a[0], u))
 
-        return []
+        return set()
 
 class RandomHockeyClient(HockeyClient):
     def play_game(self):
