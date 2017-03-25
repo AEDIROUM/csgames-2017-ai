@@ -119,6 +119,10 @@ class RandomHockeyClient(HockeyClient):
                 if not self.edge_taken[position][pos]:
                     yield edge, pos
 
+    def bouncing_neighborhood(self, pos):
+        return [neighbor for neighbor in self.neighborhood(pos) if
+                self.grid[neighbor[1]] and not self.blacklist[neighbor[1]]]
+
     def init_blacklist(self):
         self.blacklist = np.zeros((15, 15))
 
@@ -289,12 +293,27 @@ class RandomHockeyClient(HockeyClient):
         self.update_blacklist()
 
         valid_choices = [neighbor for neighbor in self.neighborhood(self.ball_position)]
-        better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
+        better_choices = [(neighbor, manhattan(neighbor[1], self.goal_position,
+            self.powerup_position))
+                for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
 
-        print(self.find_path(self.ball_position))
+        for i, choice in enumerate(better_choices):
+            better_choice, better_choice_cost = choice
+
+            frontier = self.bouncing_neighborhood(better_choice[1])
+            closed = set()
+
+            while frontier:
+                candidate = frontier.pop()
+                if manhattan(candidate[1], self.goal_position, self.ball_position) < better_choice_cost:
+                    better_choice_cost = manhattan(candidate[1], self.goal_position)
+                    frontier.extend(c for c in self.bouncing_neighborhood(candidate[1]) if c[1] not in closed)
+                    closed = closed.union(c[1] for c in self.bouncing_neighborhood(candidate[1]))
+
+            better_choices[i] = better_choice, better_choice_cost
 
         if better_choices:
-            return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position, self.powerup_position))[0]
+            return min(better_choices, key=lambda n: n[1])[0][0]
         else:
             valid_choice = min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position, self.powerup_position))
             valid_choice_neighbors = len([u for u_edge, u in self.neighborhood(valid_choice[1]) if not self.blacklist[u]])
