@@ -23,6 +23,7 @@ class HockeyClient(LineReceiver, object):
         self.ball_position = None
         self.goal = None
         self.goal_position = None
+        self.powerup_position = None
 
         # center
         self.blacklist[5, 5] = True
@@ -95,6 +96,17 @@ class HockeyClient(LineReceiver, object):
 
             return
 
+        match = re.match(r'power up is at \((\d+), (\d+)\)', line)
+        if match:
+            x, y = int(match.group(1)), int(match.group(2))
+            self.powerup_position = y, x
+            return
+
+        if line == 'polarity of the goal has been inverted':
+            self.goal = 'south' if self.goal == 'north' else 'north'
+            self.goal_position = 10 - self.goal_position[0], self.goal_position[1]
+            return
+
         match = re.match(r'.* did go (.*) - (\d+)', line)
         if match:
             dx, dy = Action.move[(match.group(1))]
@@ -103,6 +115,8 @@ class HockeyClient(LineReceiver, object):
             self.edge_taken[self.ball_position][new_ball_position] = True
             self.edge_taken[new_ball_position][self.ball_position] = True
             self.ball_position = new_ball_position
+            if new_ball_position == self.powerup_position:
+                self.powerup_position = None
             return
 
         if re.match(r'.* won a goal was made - \d+', line):
