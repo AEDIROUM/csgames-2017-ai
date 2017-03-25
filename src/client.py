@@ -225,8 +225,14 @@ class RandomHockeyClient(HockeyClient):
         if better_choices:
             return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
         else:
-            print('no better choices! :(')
-            return min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
+            valid_choice = min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position))
+            valid_choice_neighbors = len([u for u_edge, u in self.neighborhood(valid_choice[1]) if not self.blacklist[u]])
+
+            if valid_choice_neighbors > 0:
+                self.powerup = False
+                return "power {}".format(valid_choice[0])
+            else:
+                return valid_choice[0]
 
 class ClientFactory(protocol.ClientFactory):
     def __init__(self, name, debug):
