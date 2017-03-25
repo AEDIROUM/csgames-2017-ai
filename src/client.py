@@ -60,11 +60,11 @@ class HockeyClient(LineReceiver, object):
         match = re.match(r'your goal is (\w+) - \d+', line)
         if match:
             if match.group(1) == 'north':
-                self.goal = 'south'
-                self.goal_position = (15, 7) # go south
-            else:
                 self.goal = 'north'
-                self.goal_position = (-1, 7) # go north
+                self.goal_position = (-1, 7) # go south
+            else:
+                self.goal = 'south'
+                self.goal_position = (15, 7) # go north
             self.init_blacklist()
             return
 
