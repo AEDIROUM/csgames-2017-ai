@@ -103,12 +103,22 @@ class HockeyClient(LineReceiver, object):
 
     def valid_neighborhood(self, position):
         for neighbor in self.neighborhood(position):
-            if not (self.edge_taken[position][neighbor[1]] and self.blacklist[neighbor[1]]):
+            if not self.edge_taken[position][neighbor[1]]:# and ]):
+            # TODO si aucun move -> prendre celui blacklisté
+            #if not (self.edge_taken[position][neighbor[1]] and self.blacklist[neighbor[1]]):
                 yield neighbor
 
 class RandomHockeyClient(HockeyClient):
     def play_game(self):
-        return random.choice([move for move, pos in self.valid_neighborhood(self.ball_position)])
+        valid_choices = [neighbor for neighbor in self.valid_neighborhood(self.ball_position)]
+        # print(valid_choices)
+        better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
+        # print(better_choices)
+
+        if better_choices:
+            return random.choice(better_choices)[0]
+        else:
+            return random.choice(valid_choices)[0]
 
 class GoodHockeyClient(HockeyClient):
     def play_game(self):
