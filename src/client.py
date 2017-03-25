@@ -50,6 +50,7 @@ class HockeyClient(LineReceiver, object):
         if self.debug:
             print('Server said:', line)
             print(self.grid)
+            print(self.blacklist)
 
         match = re.match(r'ball is at \((\d+), (\d+)\) - \d+', line)
         if match:
@@ -106,16 +107,37 @@ class HockeyClient(LineReceiver, object):
 
     def valid_neighborhood(self, position):
         for neighbor in self.neighborhood(position):
-            if not self.edge_taken[position][neighbor[1]]:# and ]):
-            # TODO si aucun move -> prendre celui blacklisté
-            #if not (self.edge_taken[position][neighbor[1]] and self.blacklist[neighbor[1]]):
+            if not self.edge_taken[position][neighbor[1]]:
                 yield neighbor
+
+    def update_blacklist(self):
+        temp = set()
+
+        for pos in zip(*np.nonzero(self.blacklist)):
+            for accessible in [u[1] for u in self.valid_neighborhood(pos) if not self.blacklist[u[1]]]:
+                temp = temp.union(self.spooke(accessible, pos))
+                # print(accessible)
+
+        for new_blacklist_position in temp:
+            self.blacklist[new_blacklist_position] = True
+
+    def spooke(self, u, v):
+        a = [w for edge_w, w in self.valid_neighborhood(u) if v != w and not self.blacklist[w]]
+
+        if len(a) == 0:
+            return set(u)
+        elif len(a) == 1:
+            return set(u).union(self.spooke(a[0], u))
+
+        return set()
 
 def manhattan(a, b):
     return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
 class RandomHockeyClient(HockeyClient):
     def play_game(self):
+        self.update_blacklist()
+
         if self.ball_position[0] == 0 and self.goal == 'north':
             if self.ball_position[1] == 4:
                 return 'north east'
