@@ -345,6 +345,6 @@ class ClientFactory(protocol.ClientFactory):
 
 name = "Kek{}".format(random.randint(0, 999))
 
-f = ClientFactory(name, debug=True)
+f = ClientFactory(name, debug=False)
 reactor.connectTCP("localhost", 8023, f)
 reactor.run()
