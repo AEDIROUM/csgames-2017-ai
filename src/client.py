@@ -18,10 +18,16 @@ class HockeyClient(LineReceiver, object):
         # state
         self.grid = np.zeros(shape=(11, 11))
         self.edge_taken = np.zeros(shape=(11, 11, 11, 11))
-        self.ball_position = (5, 5)
-        self.goal = False
+        self.ball_position = None
+        self.goal = None
 
-        self.grid[5, 5] = True
+        # borders
+        for i in range(10):
+            if i != 4 and i != 6:
+                self.edge_taken[(i, 0)][(i + 1, 0)]
+        for j in range(10):
+            if j != 4 and j != 6:
+                self.edge_taken[(i, 0)][(i + 1, 0)]
 
     def connectionMade(self):
         self.sendLine(self.name)
@@ -36,9 +42,11 @@ class HockeyClient(LineReceiver, object):
             print('Server said:', line)
             print(self.grid)
 
-        match = re.match(r'ball is at \((\d+), (\d+\)) - \d+', line)
+        match = re.match(r'ball is at \((\d+), (\d+)\) - \d+', line)
         if match:
-            self.ball_position = int(match.group(1)), int(match.group(2))
+            pos = int(match.group(1)), int(match.group(2))
+            self.ball_position = pos
+            self.grid[pos] = True
             return
 
         match = re.match(r'your goal is (\w+) - \d+', line)
@@ -46,18 +54,35 @@ class HockeyClient(LineReceiver, object):
             self.goal = match.group(1)
             return
 
-        match = re.match(r'\w+ did go (\w+) - \d+', line)
+        match = re.match(r'.* did go (.*) - \d+', line)
         if match:
-            direction = match.group(1)
+            dx, dy = Action.move[(match.group(1))]
+            new_ball_position = self.ball_position[0] + dy, self.ball_position[1] + dx
+            self.grid[new_ball_position] = True
+            self.edge_taken[self.ball_position][new_ball_position] = True
+            self.edge_taken[new_ball_position][self.ball_position] = True
+            self.ball_position = new_ball_position
             return
 
-        if re.match(r'\w+ won a goal was made - \d+', line):
+        if re.match(r'.* won a goal was made - \d+', line):
             return # fin de la partie
 
         if '{} is active player'.format(self.name) in line or 'invalid move' in line:
             self.sendLine(self.play_game())
 
-    def play_game():
+    def neighborhood(self, position):
+        for dy, dx in Action.move.values():
+            pos = position[0] + dy, position[1] + dx
+            if 0 <= pos[0] <= 10 and 0 <= pos[1] <= 10:
+                yield pos
+
+    def valid_neighborhood(self, position):
+        for neighbor in self.neighborhood(position):
+            if not self.edge_taken[position][neighbor]:
+                yield neighbor
+
+    def play_game(self):
+        print(list(self.neighborhood(self.ball_position)))
         return Action.from_number(random.randint(0, 7))
 
 class ClientFactory(protocol.ClientFactory):
