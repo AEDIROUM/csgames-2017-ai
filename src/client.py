@@ -71,17 +71,24 @@ class HockeyClient(LineReceiver, object):
             self.sendLine(self.play_game())
 
     def neighborhood(self, position):
-        for dy, dx in Action.move.values():
+        for edge, delta in Action.move.iteritems():
+            dx, dy = delta
             pos = position[0] + dy, position[1] + dx
             if 0 <= pos[0] <= 10 and 0 <= pos[1] <= 10:
-                yield pos
+                yield edge, pos
 
     def valid_neighborhood(self, position):
         for neighbor in self.neighborhood(position):
-            if not self.edge_taken[position][neighbor]:
+            if not self.edge_taken[position][neighbor[1]]:
                 yield neighbor
 
+class RandomHockeyClient(HockeyClient):
     def play_game(self):
+        return random.choice([move for move, pos in self.valid_neighborhood(self.ball_position)])
+
+class GoodHockeyClient(HockeyClient):
+    def play_game(self):
+        print(self.ball_position)
         print(list(self.neighborhood(self.ball_position)))
         return Action.from_number(random.randint(0, 7))
 
@@ -91,7 +98,7 @@ class ClientFactory(protocol.ClientFactory):
         self.debug = debug
 
     def buildProtocol(self, addr):
-        return HockeyClient(self.name, self.debug)
+        return RandomHockeyClient(self.name, self.debug)
 
     def clientConnectionFailed(self, connector, reason):
         if self.debug:
