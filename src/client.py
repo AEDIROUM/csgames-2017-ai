@@ -8,7 +8,7 @@ from hockey.action import Action
 
 import re
 import numpy as np
-from itertools import product
+from itertools import product, chain
 
 class HockeyClient(LineReceiver, object):
     def __init__(self, name, debug):
@@ -135,8 +135,17 @@ class RandomHockeyClient(HockeyClient):
             self.blacklist[13, 9] = True
 
     def update_blacklist(self):
-        # TODO Issue w/ having borders as visited edges
-        # TODO if edge should test for min 4 visited edges
+        for y in range(1, 14):
+            if len(list(self.neighborhood((y, 0)))) == 1:
+                self.blacklist[(y, 0)] = True
+            if len(list(self.neighborhood((y, 14)))) == 1:
+                self.blacklist[(y, 14)] = True
+        for x in chain(range(1, 5), range(9, 14)):
+            if len(list(self.neighborhood((0, x)))) == 1:
+                self.blacklist[(0, x)] = True
+            if len(list(self.neighborhood((14, x)))) == 1:
+                self.blacklist[(14, x)] = True
+
         for pos in zip(*np.nonzero(self.blacklist)):
             for accessible in [u for u_edge, u in self.neighborhood(pos) if not self.blacklist[u]]:
                 self.spooke(accessible, pos)
