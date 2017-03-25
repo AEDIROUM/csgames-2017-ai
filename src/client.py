@@ -16,9 +16,9 @@ class HockeyClient(LineReceiver, object):
         self.debug = debug
 
         # state
-        self.grid = np.zeros((11, 11))
-        self.edge_taken = np.zeros((11, 11, 11, 11))
-        self.blacklist = np.zeros((11, 11))
+        self.grid = np.zeros((15, 15))
+        self.edge_taken = np.zeros((15, 15, 15, 15))
+        self.blacklist = np.zeros((15, 15))
 
         self.ball_position = None
         self.goal = None
@@ -29,27 +29,27 @@ class HockeyClient(LineReceiver, object):
 
         # corners
         self.blacklist[0, 0] = True
-        self.blacklist[0, 10] = True
-        self.blacklist[10, 0] = True
-        self.blacklist[10, 10] = True
+        self.blacklist[0, 14] = True
+        self.blacklist[14, 0] = True
+        self.blacklist[14, 14] = True
 
         # horizontal borders
-        for i in range(10):
+        for i in range(14):
             # upper
             self.edge_taken[(0, i)][(0, i + 1)] = True
             self.edge_taken[(0, i + 1)][(0, i)] = True
 
             # lower
-            self.edge_taken[(10, i)][(10, i + 1)] = True
-            self.edge_taken[(10, i + 1)][(10, i)] = True
+            self.edge_taken[(14, i)][(14, i + 1)] = True
+            self.edge_taken[(14, i + 1)][(14, i)] = True
 
         # vertical borders
-        for j in range(10):
+        for j in range(14):
             self.edge_taken[(j + 1, 0)][(j, 0)] = True
             self.edge_taken[(j, 0)][(j + 1, 0)] = True
 
-            self.edge_taken[(j + 1, 10)][(j, 10)] = True
-            self.edge_taken[(j, 10)][(j + 1, 10)] = True
+            self.edge_taken[(j + 1, 14)][(j, 14)] = True
+            self.edge_taken[(j, 14)][(j + 1, 14)] = True
 
     def connectionMade(self):
         self.sendLine(self.name)
@@ -77,21 +77,21 @@ class HockeyClient(LineReceiver, object):
             self.goal = match.group(1)
 
             if self.goal == 'north':
-                self.goal_position = (-1, 5)
-                self.blacklist[0, 5] = True
+                self.goal_position = (-1, 7)
+                self.blacklist[0, 7] = True
                 self.blacklist[1, 5] = True
-                self.blacklist[1, 3] = True
-                self.blacklist[1, 4] = True
                 self.blacklist[1, 6] = True
                 self.blacklist[1, 7] = True
+                self.blacklist[1, 8] = True
+                self.blacklist[1, 9] = True
             else:
-                self.goal_position = (11, 5)
-                self.blacklist[10, 5] = True
-                self.blacklist[9, 5] = True
-                self.blacklist[9, 3] = True
-                self.blacklist[9, 4] = True
-                self.blacklist[9, 6] = True
-                self.blacklist[9, 7] = True
+                self.goal_position = (15, 7)
+                self.blacklist[14, 7] = True
+                self.blacklist[13, 5] = True
+                self.blacklist[13, 6] = True
+                self.blacklist[13, 7] = True
+                self.blacklist[13, 8] = True
+                self.blacklist[13, 9] = True
 
             return
 
@@ -119,7 +119,7 @@ class RandomHockeyClient(HockeyClient):
         for edge, delta in Action.move.items():
             dx, dy = delta
             pos = position[0] + dy, position[1] + dx
-            if 0 <= pos[0] <= 10 and 0 <= pos[1] <= 10:
+            if 0 <= pos[0] <= 14 and 0 <= pos[1] <= 14:
                 if not self.edge_taken[position][pos]:
                     yield edge, pos
 
@@ -143,49 +143,49 @@ class RandomHockeyClient(HockeyClient):
         self.update_blacklist()
 
         if self.ball_position[0] == 0 and self.goal == 'north':
-            if self.ball_position[1] == 4:
-                return 'north east'
-            if self.ball_position[1] == 5:
-                return 'north'
             if self.ball_position[1] == 6:
+                return 'north east'
+            if self.ball_position[1] == 7:
+                return 'north'
+            if self.ball_position[1] == 8:
                 return 'north west'
 
-        if self.ball_position[0] == 10 and self.goal == 'south':
-            if self.ball_position[1] == 4:
-                return 'south east'
-            if self.ball_position[1] == 5:
-                return 'south'
+        if self.ball_position[0] == 14 and self.goal == 'south':
             if self.ball_position[1] == 6:
+                return 'south east'
+            if self.ball_position[1] == 7:
+                return 'south'
+            if self.ball_position[1] == 8:
                 return 'south west'
 
         # rebound in goal
         if self.ball_position[0] == 1 and self.goal == 'north':
-            if self.ball_position[1] == 3:
-                return 'north east'
-            if self.ball_position[1] == 4:
-                return 'north'
-
             if self.ball_position[1] == 5:
-                return 'north west'  # or north east, same thing
-
+                return 'north east'
             if self.ball_position[1] == 6:
                 return 'north'
+
             if self.ball_position[1] == 7:
+                return 'north west'  # or north east, same thing
+
+            if self.ball_position[1] == 8:
+                return 'north'
+            if self.ball_position[1] == 9:
                 return 'north west'
 
         # rebound in goal
-        if self.ball_position[0] == 9 and self.goal == 'south':
-            if self.ball_position[1] == 3:
-                return 'south east'
-            if self.ball_position[1] == 4:
-                return 'south'
-
+        if self.ball_position[0] == 13 and self.goal == 'south':
             if self.ball_position[1] == 5:
-                return 'south west'  # or south east, same thing
-
+                return 'south east'
             if self.ball_position[1] == 6:
                 return 'south'
+
             if self.ball_position[1] == 7:
+                return 'south west'  # or south east, same thing
+
+            if self.ball_position[1] == 8:
+                return 'south'
+            if self.ball_position[1] == 9:
                 return 'south west'
 
         valid_choices = [neighbor for neighbor in self.neighborhood(self.ball_position)]
