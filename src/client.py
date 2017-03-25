@@ -104,7 +104,7 @@ class HockeyClient(LineReceiver, object):
 
         if line == 'polarity of the goal has been inverted':
             self.goal = 'south' if self.goal == 'north' else 'north'
-            self.goal_position = 10 - self.goal_position[0], self.goal_position[1]
+            self.goal_position = 14 - self.goal_position[0], self.goal_position[1]
             return
 
         match = re.match(r'.* did go (.*) - (\d+)', line)
