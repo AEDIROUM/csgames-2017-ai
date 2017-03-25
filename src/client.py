@@ -108,8 +108,31 @@ class HockeyClient(LineReceiver, object):
             #if not (self.edge_taken[position][neighbor[1]] and self.blacklist[neighbor[1]]):
                 yield neighbor
 
+    def update_blacklist(self):
+        temp = []
+        blacklist = zip(*np.nonzero(self.blacklist))
+
+        for pos in blacklist:
+            for accessible in [u for u in self.valid_neighborhood(pos) if not self.blacklist[u[1]]]:
+                temp += spooke(accessible, pos, blacklist)
+                # print(accessible)
+
+        self.blacklist += temp
+
+    def spooke(self, u, v, blklist):
+        a = [w for w in self.valid_neighborhood(u) if not v or not in blklist]
+
+        if len(a) == 0:
+            return u
+        elif len(a) == 1:
+            return [u, spooke(a[0], u, blklist)]
+
+        return []
+
 class RandomHockeyClient(HockeyClient):
     def play_game(self):
+        self.update_blacklist()
+
         valid_choices = [neighbor for neighbor in self.valid_neighborhood(self.ball_position)]
         # print(valid_choices)
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
