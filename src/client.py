@@ -72,6 +72,7 @@ class HockeyClient(LineReceiver, object):
         if match:
             x, y = int(match.group(1)), int(match.group(2))
             self.powerup_position = y, x
+            self.init_blacklist()
             return
 
         if re.match(r'polarity of the goal has been inverted - \d+', line):
@@ -89,6 +90,7 @@ class HockeyClient(LineReceiver, object):
             self.ball_position = new_ball_position
             if new_ball_position == self.powerup_position:
                 self.powerup_position = None
+                self.init_blacklist()
                 if self.name == match.group(1):
                     self.powerup = True
             return
@@ -138,6 +140,12 @@ class RandomHockeyClient(HockeyClient):
             self.blacklist[1, 7] = True
             self.blacklist[1, 8] = True
             self.blacklist[1, 9] = True
+
+        # powerup surroundings
+        if self.powerup_position:
+            for pos_edge, pos in self.neighborhood(self.powerup_position):
+                if self.grid[pos] == 0:
+                    self.blacklist[pos] = True
 
     def update_blacklist(self):
         for y in range(1, 14):
