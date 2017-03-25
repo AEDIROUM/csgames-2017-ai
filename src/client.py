@@ -30,13 +30,23 @@ class HockeyClient(LineReceiver, object):
         self.blacklist[10, 0] = True
         self.blacklist[10, 10] = True
 
-        # borders
+        # horizontal borders
         for i in range(10):
-            if i != 4 and i != 6:
-                self.edge_taken[(i, 0)][(i + 1, 0)]
+            # upper
+            self.edge_taken[(0, i)][(0, i + 1)] = True
+            self.edge_taken[(0, i + 1)][(0, i)] = True
+
+            # lower
+            self.edge_taken[(10, i)][(10, i + 1)] = True
+            self.edge_taken[(10, i + 1)][(10, i)] = True
+
+        # vertical borders
         for j in range(10):
-            if j != 4 and j != 6:
-                self.edge_taken[(i, 0)][(i + 1, 0)]
+            self.edge_taken[(j + 1, 0)][(j, 0)] = True
+            self.edge_taken[(j, 0)][(j + 1, 0)] = True
+
+            self.edge_taken[(j + 1, 10)][(j, 10)] = True
+            self.edge_taken[(j, 10)][(j + 1, 10)] = True
 
     def connectionMade(self):
         self.sendLine(self.name)
