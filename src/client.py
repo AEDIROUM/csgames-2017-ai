@@ -26,7 +26,7 @@ class HockeyClient(LineReceiver, object):
         self.powerup_position = None
 
         # center
-        self.blacklist[5, 5] = True
+        self.blacklist[7, 7] = True
 
         # corners
         self.blacklist[0, 0] = True
@@ -138,6 +138,8 @@ class RandomHockeyClient(HockeyClient):
                     yield edge, pos
 
     def update_blacklist(self):
+        # TODO Issue w/ having borders as visited edges
+        # TODO if edge should test for min 4 visited edges
         for pos in zip(*np.nonzero(self.blacklist)):
             for accessible in [u for u_edge, u in self.neighborhood(pos) if not self.blacklist[u]]:
                 self.spooke(accessible, pos)
