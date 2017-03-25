@@ -27,21 +27,13 @@ class HockeyClient(LineReceiver, object):
 
         # horizontal borders
         for i in range(14):
-            # upper
-            self.edge_taken[(0, i)][(0, i + 1)] = True
-            self.edge_taken[(0, i + 1)][(0, i)] = True
-
-            # lower
-            self.edge_taken[(14, i)][(14, i + 1)] = True
-            self.edge_taken[(14, i + 1)][(14, i)] = True
+            self.mark_edge_as_taken((0, i), (0, i + 1))
+            self.mark_edge_as_taken((14, i), (14, i + 1))
 
         # vertical borders
         for j in range(14):
-            self.edge_taken[(j + 1, 0)][(j, 0)] = True
-            self.edge_taken[(j, 0)][(j + 1, 0)] = True
-
-            self.edge_taken[(j + 1, 14)][(j, 14)] = True
-            self.edge_taken[(j, 14)][(j + 1, 14)] = True
+            self.mark_edge_as_taken((j + 1, 0), (j, 0))
+            self.mark_edge_as_taken((j + 1, 14), (j, 14))
 
     def connectionMade(self):
         self.sendLine(self.name)
@@ -91,8 +83,7 @@ class HockeyClient(LineReceiver, object):
             dx, dy = Action.move[(match.group(1))]
             new_ball_position = self.ball_position[0] + dy, self.ball_position[1] + dx
             self.grid[new_ball_position] = int(match.group(2))
-            self.edge_taken[self.ball_position][new_ball_position] = True
-            self.edge_taken[new_ball_position][self.ball_position] = True
+            self.mark_edge_as_taken(self.ball_position, new_ball_position)
             self.ball_position = new_ball_position
             if new_ball_position == self.powerup_position:
                 self.powerup_position = None
@@ -149,6 +140,10 @@ class RandomHockeyClient(HockeyClient):
         for pos in zip(*np.nonzero(self.blacklist)):
             for accessible in [u for u_edge, u in self.neighborhood(pos) if not self.blacklist[u]]:
                 self.spooke(accessible, pos)
+
+    def mark_edge_as_taken(self, a, b):
+        self.edge_taken[a][b] = True
+        self.edge_taken[b][a] = True
 
     def spooke(self, u, v):
         a = [w for edge_w, w in self.neighborhood(u) if v != w and not self.blacklist[w]]
