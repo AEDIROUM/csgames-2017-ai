@@ -99,6 +99,9 @@ class HockeyClient(LineReceiver, object):
             return # fin de la partie
 
         if '{} is active player'.format(self.name) in line or 'invalid move' in line:
+            move = self.play_game()
+            # TODO Debug this shit
+            # print(move)
             self.sendLine(self.play_game())
 
 def manhattan(a, b, c=None):
@@ -165,6 +168,28 @@ class RandomHockeyClient(HockeyClient):
         for pos in zip(*np.nonzero(self.blacklist)):
             for accessible in [u for u_edge, u in self.neighborhood(pos) if not self.blacklist[u]]:
                 self.spooke(accessible, pos)
+
+    def find_path_recur(self, u, direc, v, i):
+        reachable = []
+
+        for w in [w for edge_w, w in self.neighborhood(u) if w not in v and not self.blacklist[w]]:
+            if self.grid[w] != 0:
+                reachable += (w, direc, i + 1)
+            else:
+                reachable += self.find_path_recur(w, direc, v + [u], i + 1)
+
+        return reachable
+
+    def find_path(self, vertex):
+        reachable = []
+
+        for accessible in [u for u_edge, u in self.neighborhood(vertex) if not self.blacklist[u]]:
+            if self.grid[accessible] == 0:
+                reachable += (accessible, accessible, 1)
+            else:
+                reachable += self.find_path_recur(accessible, accessible, [vertex], 1)
+
+        return reachable
 
     def mark_edge_as_taken(self, a, b):
         self.edge_taken[a][b] = True
@@ -265,6 +290,8 @@ class RandomHockeyClient(HockeyClient):
 
         valid_choices = [neighbor for neighbor in self.neighborhood(self.ball_position)]
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
+
+        print(self.find_path(self.ball_position))
 
         if better_choices:
             return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position, self.powerup_position))[0]
