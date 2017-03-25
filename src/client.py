@@ -24,6 +24,9 @@ class HockeyClient(LineReceiver, object):
         self.goal = None
         self.goal_position = None
 
+        # center
+        self.blacklist[5, 5] = True
+
         # corners
         self.blacklist[0, 0] = True
         self.blacklist[0, 10] = True
