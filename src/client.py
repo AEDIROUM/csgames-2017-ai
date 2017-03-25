@@ -20,6 +20,7 @@ class HockeyClient(LineReceiver, object):
         self.edge_taken = np.zeros((11, 11, 11, 11))
         self.ball_position = None
         self.goal = None
+        self.goal_position = None
         # self.blacklist = [(0, 0), (0, 10), (10, 0), (10, 10)]
         self.blacklist = np.zeros((11, 11))
 
@@ -62,6 +63,7 @@ class HockeyClient(LineReceiver, object):
             self.goal = match.group(1)
 
             if self.goal == 'north':
+                self.goal_position = (-1, 5)
                 self.blacklist[0, 5] = True
                 self.blacklist[1, 5] = True
                 self.blacklist[1, 3] = True
@@ -69,6 +71,7 @@ class HockeyClient(LineReceiver, object):
                 self.blacklist[1, 6] = True
                 self.blacklist[1, 7] = True
             else:
+                self.goal_position = (11, 5)
                 self.blacklist[10, 5] = True
                 self.blacklist[9, 5] = True
                 self.blacklist[9, 3] = True
@@ -108,17 +111,34 @@ class HockeyClient(LineReceiver, object):
             #if not (self.edge_taken[position][neighbor[1]] and self.blacklist[neighbor[1]]):
                 yield neighbor
 
+def manhattan(a, b):
+    return abs(b[0] - a[0]) + abs(b[1] - a[1])
+
 class RandomHockeyClient(HockeyClient):
     def play_game(self):
+        if self.ball_position[0] == 0 and self.goal == 'north':
+            if self.ball_position[1] == 4:
+                return 'north east'
+            if self.ball_position[1] == 5:
+                return 'north'
+            if self.ball_position[1] == 6:
+                return 'north west'
+
+        if self.ball_position[0] == 10 and self.goal == 'south':
+            if self.ball_position[1] == 4:
+                return 'south east'
+            if self.ball_position[1] == 5:
+                return 'south'
+            if self.ball_position[1] == 6:
+                return 'south west'
+
         valid_choices = [neighbor for neighbor in self.valid_neighborhood(self.ball_position)]
-        # print(valid_choices)
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
-        # print(better_choices)
 
         if better_choices:
-            return random.choice(better_choices)[0]
+            return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
         else:
-            return random.choice(valid_choices)[0]
+            return min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
 
 class GoodHockeyClient(HockeyClient):
     def play_game(self):
