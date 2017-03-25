@@ -80,7 +80,7 @@ class HockeyClient(LineReceiver, object):
             self.init_blacklist()
             return
 
-        match = re.match(r'(.*) did go (.*) - (\d+)', line)
+        match = re.match(r'(.*) did go (?:power )?(.*) - (\d+)', line)
         if match:
             dx, dy = Action.move[(match.group(2))]
             new_ball_position = self.ball_position[0] + dy, self.ball_position[1] + dx
