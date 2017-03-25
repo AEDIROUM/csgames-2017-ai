@@ -20,7 +20,14 @@ class HockeyClient(LineReceiver, object):
         self.edge_taken = np.zeros((11, 11, 11, 11))
         self.ball_position = None
         self.goal = None
-        self.blacklist = [(0, 0), (0, 10), (10, 0), (10, 10)]
+        # self.blacklist = [(0, 0), (0, 10), (10, 0), (10, 10)]
+        self.blacklist = np.zeros((11, 11))
+
+        # corners
+        self.blacklist[0, 0] = True
+        self.blacklist[0, 10] = True
+        self.blacklist[10, 0] = True
+        self.blacklist[10, 10] = True
 
         # borders
         for i in range(10):
@@ -53,12 +60,22 @@ class HockeyClient(LineReceiver, object):
         match = re.match(r'your goal is (\w+) - \d+', line)
         if match:
             self.goal = match.group(1)
-            if self.goal == 'north':
-                self.blacklist += [(0, 5), (1, 5), (1, 3), (1, 4), (1, 6), (1, 7)]
-            else:
-                self.blacklist += [(10, 5), (9, 5), (9, 3), (9, 4), (9, 6), (9, 7)]
 
-            #print(self.blacklist)
+            if self.goal == 'north':
+                self.blacklist[0, 5] = True
+                self.blacklist[1, 5] = True
+                self.blacklist[1, 3] = True
+                self.blacklist[1, 4] = True
+                self.blacklist[1, 6] = True
+                self.blacklist[1, 7] = True
+            else:
+                self.blacklist[10, 5] = True
+                self.blacklist[9, 5] = True
+                self.blacklist[9, 3] = True
+                self.blacklist[9, 4] = True
+                self.blacklist[9, 6] = True
+                self.blacklist[9, 7] = True
+
             return
 
         match = re.match(r'.* did go (.*) - \d+', line)
@@ -86,7 +103,7 @@ class HockeyClient(LineReceiver, object):
 
     def valid_neighborhood(self, position):
         for neighbor in self.neighborhood(position):
-            if not (self.edge_taken[position][neighbor[1]] and neighbor[1] in self.blacklist):
+            if not (self.edge_taken[position][neighbor[1]] and self.blacklist[neighbor[1]]):
                 yield neighbor
 
 class RandomHockeyClient(HockeyClient):
