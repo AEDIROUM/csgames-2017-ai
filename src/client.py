@@ -164,6 +164,36 @@ class RandomHockeyClient(HockeyClient):
             if self.ball_position[1] == 6:
                 return 'south west'
 
+        # rebound in goal
+        if self.ball_position[0] == 1 and self.goal == 'north':
+            if self.ball_position[1] == 3:
+                return 'north east'
+            if self.ball_position[1] == 4:
+                return 'north'
+
+            if self.ball_position[1] == 5:
+                return 'north west'  # or north east, same thing
+
+            if self.ball_position[1] == 6:
+                return 'north'
+            if self.ball_position[1] == 7:
+                return 'north west'
+
+        # rebound in goal
+        if self.ball_position[0] == 9 and self.goal == 'south':
+            if self.ball_position[1] == 3:
+                return 'south east'
+            if self.ball_position[1] == 4:
+                return 'south'
+
+            if self.ball_position[1] == 5:
+                return 'south west'  # or south east, same thing
+
+            if self.ball_position[1] == 6:
+                return 'south'
+            if self.ball_position[1] == 7:
+                return 'south west'
+
         valid_choices = [neighbor for neighbor in self.valid_neighborhood(self.ball_position)]
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
 
