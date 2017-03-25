@@ -24,6 +24,7 @@ class HockeyClient(LineReceiver, object):
         self.goal = None
         self.goal_position = None
         self.powerup_position = None
+        self.powerup = False
 
         # horizontal borders
         for i in range(14):
@@ -78,15 +79,17 @@ class HockeyClient(LineReceiver, object):
             self.init_blacklist()
             return
 
-        match = re.match(r'.* did go (.*) - (\d+)', line)
+        match = re.match(r'(.*) did go (.*) - (\d+)', line)
         if match:
-            dx, dy = Action.move[(match.group(1))]
+            dx, dy = Action.move[(match.group(2))]
             new_ball_position = self.ball_position[0] + dy, self.ball_position[1] + dx
-            self.grid[new_ball_position] = int(match.group(2))
+            self.grid[new_ball_position] = int(match.group(3))
             self.mark_edge_as_taken(self.ball_position, new_ball_position)
             self.ball_position = new_ball_position
             if new_ball_position == self.powerup_position:
                 self.powerup_position = None
+                if self.name == match.group(1):
+                    self.powerup = True
             return
 
         if re.match(r'.* won a goal was made - \d+', line):
