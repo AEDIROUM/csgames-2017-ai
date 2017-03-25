@@ -25,15 +25,6 @@ class HockeyClient(LineReceiver, object):
         self.goal_position = None
         self.powerup_position = None
 
-        # center
-        self.blacklist[7, 7] = True
-
-        # corners
-        self.blacklist[0, 0] = True
-        self.blacklist[0, 14] = True
-        self.blacklist[14, 0] = True
-        self.blacklist[14, 14] = True
-
         # horizontal borders
         for i in range(14):
             # upper
@@ -76,35 +67,23 @@ class HockeyClient(LineReceiver, object):
         match = re.match(r'your goal is (\w+) - \d+', line)
         if match:
             self.goal = match.group(1)
-
             if self.goal == 'north':
                 self.goal_position = (-1, 7)
-                self.blacklist[0, 7] = True
-                self.blacklist[1, 5] = True
-                self.blacklist[1, 6] = True
-                self.blacklist[1, 7] = True
-                self.blacklist[1, 8] = True
-                self.blacklist[1, 9] = True
             else:
                 self.goal_position = (15, 7)
-                self.blacklist[14, 7] = True
-                self.blacklist[13, 5] = True
-                self.blacklist[13, 6] = True
-                self.blacklist[13, 7] = True
-                self.blacklist[13, 8] = True
-                self.blacklist[13, 9] = True
-
+            self.init_blacklist()
             return
 
-        match = re.match(r'power up is at \((\d+), (\d+)\)', line)
+        match = re.match(r'power up is at \((\d+), (\d+)\) - \d+', line)
         if match:
             x, y = int(match.group(1)), int(match.group(2))
             self.powerup_position = y, x
             return
 
-        if line == 'polarity of the goal has been inverted':
+        if re.match(r'polarity of the goal has been inverted - \d+', line):
             self.goal = 'south' if self.goal == 'north' else 'north'
             self.goal_position = 14 - self.goal_position[0], self.goal_position[1]
+            self.init_blacklist()
             return
 
         match = re.match(r'.* did go (.*) - (\d+)', line)
@@ -136,6 +115,33 @@ class RandomHockeyClient(HockeyClient):
             if 0 <= pos[0] <= 14 and 0 <= pos[1] <= 14:
                 if not self.edge_taken[position][pos]:
                     yield edge, pos
+
+    def init_blacklist(self):
+        self.blacklist = np.zeros((15, 15))
+
+        # center
+        self.blacklist[7, 7] = True
+
+        # corners
+        self.blacklist[0, 0] = True
+        self.blacklist[0, 14] = True
+        self.blacklist[14, 0] = True
+        self.blacklist[14, 14] = True
+
+        if self.goal == 'north':
+            self.blacklist[0, 7] = True
+            self.blacklist[1, 5] = True
+            self.blacklist[1, 6] = True
+            self.blacklist[1, 7] = True
+            self.blacklist[1, 8] = True
+            self.blacklist[1, 9] = True
+        else:
+            self.blacklist[14, 7] = True
+            self.blacklist[13, 5] = True
+            self.blacklist[13, 6] = True
+            self.blacklist[13, 7] = True
+            self.blacklist[13, 8] = True
+            self.blacklist[13, 9] = True
 
     def update_blacklist(self):
         # TODO Issue w/ having borders as visited edges
