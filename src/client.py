@@ -101,8 +101,11 @@ class HockeyClient(LineReceiver, object):
         if '{} is active player'.format(self.name) in line or 'invalid move' in line:
             self.sendLine(self.play_game())
 
-def manhattan(a, b):
-    return abs(b[0] - a[0]) + abs(b[1] - a[1])
+def manhattan(a, b, c=None):
+    if c:
+        return min(abs(b[0] - a[0]) + abs(b[1] - a[1]), abs(c[0] - a[0]) + abs(c[1] - a[1]))
+    else:
+        return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
 class RandomHockeyClient(HockeyClient):
     def neighborhood(self, position):
@@ -231,9 +234,9 @@ class RandomHockeyClient(HockeyClient):
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
 
         if better_choices:
-            return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
+            return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position, self.powerup_position))[0]
         else:
-            valid_choice = min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position))
+            valid_choice = min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position, self.powerup_position))
             valid_choice_neighbors = len([u for u_edge, u in self.neighborhood(valid_choice[1]) if not self.blacklist[u]])
 
             if valid_choice_neighbors > 0:
