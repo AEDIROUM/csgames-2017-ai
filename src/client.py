@@ -182,8 +182,6 @@ class RandomHockeyClient(HockeyClient):
             pass # there is a way out!
 
     def play_game(self):
-        self.update_blacklist()
-
         # Use the powerup if near the goal
         if self.powerup and self.ball_position[0] == 2 and self.goal == 'north':
             # if self.ball_position[1] == 4:
@@ -262,6 +260,8 @@ class RandomHockeyClient(HockeyClient):
                 return 'south'
             if self.ball_position[1] == 9:
                 return 'south west'
+
+        self.update_blacklist()
 
         valid_choices = [neighbor for neighbor in self.neighborhood(self.ball_position)]
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
