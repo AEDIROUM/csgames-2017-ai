@@ -18,11 +18,11 @@ class HockeyClient(LineReceiver, object):
         # state
         self.grid = np.zeros((11, 11))
         self.edge_taken = np.zeros((11, 11, 11, 11))
+        self.blacklist = np.zeros((11, 11))
+
         self.ball_position = None
         self.goal = None
         self.goal_position = None
-        # self.blacklist = [(0, 0), (0, 10), (10, 0), (10, 10)]
-        self.blacklist = np.zeros((11, 11))
 
         # corners
         self.blacklist[0, 0] = True
@@ -62,11 +62,11 @@ class HockeyClient(LineReceiver, object):
             print(self.grid)
             print(self.blacklist)
 
-        match = re.match(r'ball is at \((\d+), (\d+)\) - \d+', line)
+        match = re.match(r'ball is at \((\d+), (\d+)\) - (\d+)', line)
         if match:
             pos = int(match.group(1)), int(match.group(2))
             self.ball_position = pos
-            self.grid[pos] = True
+            self.grid[pos] = int(match.group(3))
             return
 
         match = re.match(r'your goal is (\w+) - \d+', line)
@@ -92,11 +92,11 @@ class HockeyClient(LineReceiver, object):
 
             return
 
-        match = re.match(r'.* did go (.*) - \d+', line)
+        match = re.match(r'.* did go (.*) - (\d+)', line)
         if match:
             dx, dy = Action.move[(match.group(1))]
             new_ball_position = self.ball_position[0] + dy, self.ball_position[1] + dx
-            self.grid[new_ball_position] = True
+            self.grid[new_ball_position] = int(match.group(2))
             self.edge_taken[self.ball_position][new_ball_position] = True
             self.edge_taken[new_ball_position][self.ball_position] = True
             self.ball_position = new_ball_position
@@ -108,43 +108,34 @@ class HockeyClient(LineReceiver, object):
         if '{} is active player'.format(self.name) in line or 'invalid move' in line:
             self.sendLine(self.play_game())
 
+def manhattan(a, b):
+    return abs(b[0] - a[0]) + abs(b[1] - a[1])
+
+class RandomHockeyClient(HockeyClient):
     def neighborhood(self, position):
         for edge, delta in Action.move.items():
             dx, dy = delta
             pos = position[0] + dy, position[1] + dx
             if 0 <= pos[0] <= 10 and 0 <= pos[1] <= 10:
-                yield edge, pos
-
-    def valid_neighborhood(self, position):
-        for neighbor in self.neighborhood(position):
-            if not self.edge_taken[position][neighbor[1]]:
-                yield neighbor
+                if not self.edge_taken[position][pos]:
+                    yield edge, pos
 
     def update_blacklist(self):
-        temp = set()
-
         for pos in zip(*np.nonzero(self.blacklist)):
-            for accessible in [u[1] for u in self.valid_neighborhood(pos) if not self.blacklist[u[1]]]:
-                temp = temp.union(self.spooke(accessible, pos))
-                # print(accessible)
-
-        for new_blacklist_position in temp:
-            self.blacklist[new_blacklist_position] = True
+            for accessible in [u for u_edge, u in self.neighborhood(pos) if not self.blacklist[u]]:
+                self.spooke(accessible, pos)
 
     def spooke(self, u, v):
-        a = [w for edge_w, w in self.valid_neighborhood(u) if v != w and not self.blacklist[w]]
+        a = [w for edge_w, w in self.neighborhood(u) if v != w and not self.blacklist[w]]
 
         if len(a) == 0:
-            return set(u)
+            self.blacklist[u] = True
         elif len(a) == 1:
-            return set(u).union(self.spooke(a[0], u))
+            self.blacklist[u] = True
+            self.spooke(a[0], u)
+        else:
+            pass # there is a way out!
 
-        return set()
-
-def manhattan(a, b):
-    return abs(b[0] - a[0]) + abs(b[1] - a[1])
-
-class RandomHockeyClient(HockeyClient):
     def play_game(self):
         self.update_blacklist()
 
@@ -194,19 +185,14 @@ class RandomHockeyClient(HockeyClient):
             if self.ball_position[1] == 7:
                 return 'south west'
 
-        valid_choices = [neighbor for neighbor in self.valid_neighborhood(self.ball_position)]
+        valid_choices = [neighbor for neighbor in self.neighborhood(self.ball_position)]
         better_choices = [neighbor for neighbor in valid_choices if not self.blacklist[neighbor[1]]]
 
         if better_choices:
             return min(better_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
         else:
+            print('no better choices! :(')
             return min(valid_choices, key=lambda n: manhattan(n[1], self.goal_position))[0]
-
-class GoodHockeyClient(HockeyClient):
-    def play_game(self):
-        print(self.ball_position)
-        print(list(self.neighborhood(self.ball_position)))
-        return Action.from_number(random.randint(0, 7))
 
 class ClientFactory(protocol.ClientFactory):
     def __init__(self, name, debug):
